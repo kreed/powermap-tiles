@@ -19,11 +19,11 @@ updatedb:
 	mv planet-power.o5m planet-power-imported.o5m
 	./grid.py trex
 	rm -r cache
-	./trex generate --config power.toml
+	./trex generate --config power.toml --minzoom 0 --maxzoom 6
 
 import:
 	osm2pgsql -s -G -C 2048 -E 3857 -S osm2pgsql.style -j planet-power-imported.o5m -d trex --tag-transform-script osm2pgsql.lua
 	psql -d trex -f indexes.sql
 	./grid.py trex
 	rm -r cache
-	./trex generate --config power.toml
+	./trex generate --config power.toml --minzoom 0 --maxzoom 6

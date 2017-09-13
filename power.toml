@@ -42,15 +42,6 @@ UNION ALL
     FROM planet_osm_polygon
     WHERE way && !bbox!
     AND power IN ('substation', 'sub_station', 'station', 'plant', 'generator')
-UNION ALL
-    SELECT
-        osm_id,
-        way,
-        tags->'power' AS kind,
-        tags->'name' AS name,
-        true AS label_placement
-    FROM plant_site_relations
-    WHERE way && !bbox!
 """
 
 [[tileset.layer]]

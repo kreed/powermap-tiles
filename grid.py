@@ -6,45 +6,6 @@ from pprint import pprint
 conn = psycopg2.connect("dbname='" + sys.argv[1] + "'")
 cur = conn.cursor()
 
-# osm2pgsql doesn't have any support for site relations, so we process those here.
-# It would be nice to eventually do this in osm2pgsql (maybe through the lua script
-# possible).
-# To process we create a geometry collection from the all the children of the site
-# relation and store the center of that geometry.
-cur.execute("""
-CREATE OR REPLACE FUNCTION pg_temp.line_or_poly(geom geometry)
-  RETURNS geometry AS
-$$ BEGIN
-  IF ST_IsClosed(geom) THEN
-    RETURN ST_MakePolygon(geom);
-  ELSE
-    RETURN geom;
-  END IF;
-END; $$ LANGUAGE plpgsql;
-
-CREATE FUNCTION pg_temp.multi_geom(osm_object text)
-RETURNS geometry AS $$
-DECLARE
-    osm_type text := substring(osm_object for 1);
-    osm_id bigint := substring(osm_object from 2);
-BEGIN
-    CASE osm_type
-        WHEN 'n' THEN
-            RETURN ST_Transform(ST_SetSRID(ST_MakePoint(lon / 10000000.0, lat / 10000000.0), 4326), 3857) FROM planet_osm_nodes WHERE id=osm_id;
-        WHEN 'r' THEN
-            RETURN ST_Multi(ST_Collect(pg_temp.multi_geom(mem.object))) FROM (SELECT unnest(akeys(members::hstore)) AS object FROM planet_osm_rels WHERE id=osm_id) mem;
-        WHEN 'w' THEN
-            RETURN ST_Centroid(pg_temp.line_or_poly(ST_MakeLine(pg_temp.multi_geom('n'||mem.object)))) FROM (SELECT unnest(nodes) AS object FROM planet_osm_ways WHERE id=osm_id) mem;
-    END CASE;
-END; $$ LANGUAGE plpgsql;
-
-CREATE TABLE IF NOT EXISTS plant_site_relations (osm_id bigint, way geometry, tags hstore);
-CREATE INDEX IF NOT EXISTS plant_site_relations_idx ON plant_site_relations USING gist(way);
-TRUNCATE plant_site_relations;
-INSERT INTO plant_site_relations
-SELECT id, ST_Centroid(pg_temp.multi_geom('r'||id)), tags::hstore FROM planet_osm_rels WHERE tags::hstore->'type'='site' AND tags::hstore->'power'='plant';
-""")
-
 # Power grid locating script.
 # This will start at a specified power line and iterates through all the connected lines.
 # Based off of the keepright floating islands check.
