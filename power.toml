@@ -1,0 +1,119 @@
+# t-rex configuration
+
+[service.mvt]
+viewer = true
+
+[[datasource]]
+dbconn = "postgresql://chris@%2Fvar%2Frun%2Fpostgresql/trex"
+
+[grid]
+predefined = "web_mercator"
+
+[[tileset]]
+name = "power"
+
+[[tileset.layer]]
+name = "power-point"
+geometry_field = "way"
+geometry_type = "POINT"
+srid = 3857
+fid_field = "osm_id"
+
+[[tileset.layer.query]]
+minzoom = 5
+maxzoom = 16
+sql = """
+    SELECT
+        osm_id,
+        way,
+        power AS kind,
+        tags->'name' AS name,
+        false AS label_placement
+    FROM planet_osm_point
+    WHERE way && !bbox!
+    AND min_zoom <= !zoom!
+UNION ALL
+    SELECT
+        osm_id,
+        ST_PointOnSurface(way),
+        power AS kind,
+        tags->'name' AS name,
+        true AS label_placement
+    FROM planet_osm_polygon
+    WHERE way && !bbox!
+    AND min_zoom <= !zoom!
+UNION ALL
+    SELECT
+        osm_id,
+        way,
+        tags->'power' AS kind,
+        tags->'name' AS name,
+        true AS label_placement
+    FROM plant_site_relations
+    WHERE way && !bbox!
+"""
+
+[[tileset.layer]]
+name = "power-line"
+geometry_field = "way"
+geometry_type = "LINESTRING"
+srid = 3857
+fid_field = "osm_id"
+buffer_size = 10
+simplify = true
+
+[[tileset.layer.query]]
+minzoom = 0
+maxzoom = 16
+sql = """
+    SELECT
+        osm_id,
+        way,
+        power AS kind,
+        max_voltage,
+        tags->'voltage' AS voltage,
+        tags->'name' AS name,
+        tags->'cables' AS cables,
+        tags->'frequency' AS frequency,
+        grid
+    FROM planet_osm_line
+    WHERE way && !bbox!
+    AND min_zoom <= !zoom!
+    ORDER BY max_voltage
+"""
+
+[[tileset.layer]]
+name = "power-polygon"
+geometry_field = "way"
+geometry_type = "POLYGON"
+srid = 3857
+fid_field = "osm_id"
+simplify = true
+
+[[tileset.layer.query]]
+minzoom = 5
+maxzoom = 16
+sql = """
+    SELECT
+        osm_id,
+        way,
+        max_voltage,
+        power AS kind,
+        tags->'voltage' AS voltage,
+        tags->'name' AS name
+    FROM planet_osm_polygon
+    WHERE way && !bbox!
+    AND min_zoom <= !zoom!
+"""
+
+[cache.file]
+base = "cache"
+#baseurl = "http://example.com/tiles"
+
+[webserver]
+# Bind address. Use 0.0.0.0 to listen on all adresses.
+bind = "127.0.0.1"
+port = 9092
+threads = 4
+#cache_control_max_age = 43200
+

@@ -1,0 +1,12 @@
+# OsmType  Tag                           DataType  Flags
+node,way   power                         text
+
+# This is calculated during import
+way        way_area                      real
+
+# Columns defined in openstreetmap-carto.lua file
+node,way   max_voltage                   int4
+node,way   min_zoom                      int4
+
+# columns defined in grid.py
+way        grid                          text
