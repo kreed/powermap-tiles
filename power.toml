@@ -35,12 +35,12 @@ sql = """
 UNION ALL
     SELECT
         osm_id,
-        ST_PointOnSurface(way),
+        label_placement AS way,
         power AS kind,
         tags->'name' AS name,
         true AS label_placement
     FROM planet_osm_polygon
-    WHERE way && !bbox!
+    WHERE label_placement && !bbox!
     AND power IN ('substation', 'sub_station', 'station', 'plant', 'generator')
 """
 
