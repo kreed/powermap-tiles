@@ -31,7 +31,7 @@ sql = """
         false AS label_placement
     FROM planet_osm_point
     WHERE way && !bbox!
-    AND min_zoom <= !zoom!
+    AND power IN ('substation', 'sub_station', 'station', 'plant', 'generator')
 UNION ALL
     SELECT
         osm_id,
@@ -41,7 +41,7 @@ UNION ALL
         true AS label_placement
     FROM planet_osm_polygon
     WHERE way && !bbox!
-    AND min_zoom <= !zoom!
+    AND power IN ('substation', 'sub_station', 'station', 'plant', 'generator')
 UNION ALL
     SELECT
         osm_id,
@@ -64,6 +64,31 @@ simplify = true
 
 [[tileset.layer.query]]
 minzoom = 0
+maxzoom = 9
+sql = """
+    SELECT
+        osm_id,
+        way,
+        power AS kind,
+        max_voltage,
+        tags->'voltage' AS voltage,
+        tags->'name' AS name,
+        tags->'cables' AS cables,
+        tags->'frequency' AS frequency,
+        grid
+    FROM planet_osm_line
+    WHERE way && !bbox!
+    AND power IN ('line', 'cable')
+    AND max_voltage >= (CASE
+        WHEN !zoom! < 3 THEN 300000
+        WHEN !zoom! < 5 THEN 100000
+        ELSE 33000
+    END)
+    ORDER BY max_voltage
+"""
+
+[[tileset.layer.query]]
+minzoom = 10
 maxzoom = 16
 sql = """
     SELECT
@@ -78,7 +103,7 @@ sql = """
         grid
     FROM planet_osm_line
     WHERE way && !bbox!
-    AND min_zoom <= !zoom!
+    AND power IN ('line', 'cable', 'minor_line')
     ORDER BY max_voltage
 """
 
@@ -103,7 +128,7 @@ sql = """
         tags->'name' AS name
     FROM planet_osm_polygon
     WHERE way && !bbox!
-    AND min_zoom <= !zoom!
+    AND power IN ('substation', 'sub_station', 'station', 'plant', 'generator')
 """
 
 [cache.file]

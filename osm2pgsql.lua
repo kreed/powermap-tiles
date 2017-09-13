@@ -288,30 +288,9 @@ function max_voltage(tags)
         local values = alphanumsort(explode(";", tags.voltage))
         tags.voltage = table.concat(values, ";")
         tags.max_voltage = tonumber(values[1])
-    end
-
-    if tags.power == 'plant' then
-        tags.min_zoom = 5
-    elseif tags.power == 'generator' then
-        tags.min_zoom = 5
-    elseif tags.power == 'substation' then
-        tags.min_zoom = 5
-    elseif tags.power == 'sub_station' or tags.power == 'station' then
-        tags.min_zoom = 5
-        tags.power = 'substation'
-    elseif tags.power == 'cable' or tags.power == 'line' then
-        local v = tags.max_voltage or 0
-        if v >= 300000 then
-            tags.min_zoom = 0
-        elseif v >= 100000 then
-            tags.min_zoom = 3
-        elseif v >= 33000 then
-            tags.min_zoom = 5
-        else
-            tags.min_zoom = 10
+        if tags.power == 'line' and tags.max_voltage < 33000 then
+            tags.power = 'minor_line'
         end
-    elseif tags.power == 'minor_line' then
-        tags.min_zoom = 10
     end
 end
 
