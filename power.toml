@@ -63,6 +63,8 @@ sql = """
         power AS kind,
         max_voltage,
         tags->'voltage' AS voltage,
+        tags->'voltage_normalized' AS voltage_normalized,
+        (tags->'voltage_count')::integer AS voltage_count,
         tags->'name' AS name,
         tags->'cables' AS cables,
         tags->'frequency' AS frequency,
@@ -88,6 +90,8 @@ sql = """
         power AS kind,
         max_voltage,
         tags->'voltage' AS voltage,
+        tags->'voltage_normalized' AS voltage_normalized,
+        (tags->'voltage_count')::integer AS voltage_count,
         tags->'name' AS name,
         tags->'cables' AS cables,
         tags->'frequency' AS frequency,
@@ -116,6 +120,8 @@ sql = """
         max_voltage,
         power AS kind,
         tags->'voltage' AS voltage,
+        tags->'voltage_normalized' AS voltage_normalized,
+        (tags->'voltage_count')::integer AS voltage_count,
         tags->'name' AS name
     FROM planet_osm_polygon
     WHERE way && !bbox!

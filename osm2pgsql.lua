@@ -2,7 +2,7 @@
 -- https://github.com/openstreetmap/osm2pgsql/blob/master/docs/lua.md
 
 -- Custom keys that are defined by this file
-custom_keys = {'z_order', 'max_voltage'}
+custom_keys = {'max_voltage', 'voltage_count', 'voltage_normalized'}
 
 -- Objects with any of the following keys will be treated as polygon
 local polygon_keys = {
@@ -274,21 +274,28 @@ function explode(d,p)
    return t
 end
 
-function alphanumsort(o)
-  local function padnum(d) local dec, n = string.match(d, "(%.?)0*(.+)")
-    return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n) end
-  table.sort(o, function(a,b)
-    return tostring(a):gsub("%.?%d+",padnum)..("%3d"):format(#b)
-         > tostring(b):gsub("%.?%d+",padnum)..("%3d"):format(#a) end)
-  return o
-end
-
-function max_voltage(tags)
+function power_tags(tags)
     if tags.voltage ~= nil then
-        local values = alphanumsort(explode(";", tags.voltage))
-        tags.voltage = table.concat(values, ";")
-        tags.max_voltage = tonumber(values[1])
-        if tags.power == 'line' and tags.max_voltage < 33000 then
+        local hash = {}
+        local normalized = {}
+        -- normalize voltage value by removing non-numeric elements, deduplicating,
+        -- and sorting in descinding order
+        for _,v in ipairs(explode(";", tags.voltage)) do
+            v = tonumber(v)
+            if v and not hash[v] then
+                normalized[#normalized+1] = v
+                hash[v] = true
+            end
+        end
+        table.sort(normalized, function(a,b) return a > b end)
+        -- ignore HVDC electrode lines
+        if #normalized > 1 and normalized[#normalized] == 0 then
+            table.remove(normalized)
+        end
+        tags.voltage_normalized = table.concat(normalized, ";")
+        tags.voltage_count = #normalized
+        tags.max_voltage = normalized[1]
+        if tags.power == 'line' and tags.max_voltage and tags.max_voltage < 33000 then
             tags.power = 'minor_line'
         end
     end
@@ -343,13 +350,13 @@ end
 
 -- Filtering on nodes
 function filter_tags_node (keyvalues, numberofkeys)
-    max_voltage(keyvalues)
+    power_tags(keyvalues)
     return filter_tags_generic(keyvalues, numberofkeys)
 end
 
 -- Filtering on relations
 function filter_basic_tags_rel (keyvalues, numberofkeys)
-    max_voltage(keyvalues)
+    power_tags(keyvalues)
     -- Filter out objects that are filtered out by filter_tags_generic
     local filter, keyvalues = filter_tags_generic(keyvalues, numberofkeys)
     if filter == 1 then
@@ -379,7 +386,7 @@ function filter_tags_way (keyvalues, numberofkeys)
 
     -- Add z_order column
     keyvalues.z_order = z_order(keyvalues)
-    max_voltage(keyvalues)
+    power_tags(keyvalues)
 
     return filter, keyvalues, polygon, roads(keyvalues)
 end
@@ -464,7 +471,7 @@ function filter_tags_relation_member (keyvalues, keyvaluemembers, roles, memberc
             end
         else
             -- This is a new-style MP
-            max_voltage(keyvalues)
+            power_tags(keyvalues)
             keyvalues.z_order = z_order(keyvalues)
             return 0, keyvalues, members_superseeded, 0, 1, 0
         end
