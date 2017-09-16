@@ -53,14 +53,14 @@ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 DELETE FROM planet_osm_point WHERE osm_id<0;
-INSERT INTO planet_osm_point
+INSERT INTO planet_osm_point (osm_id, power, max_voltage, tags, way)
 SELECT -id, 'plant', NULL, tags::hstore, ST_Centroid(power_multi_geom('r'||id)) FROM planet_osm_rels WHERE tags::hstore->'type'='site' AND tags::hstore->'power'='plant';
 
 CREATE OR REPLACE FUNCTION trigger_site_relation_function()
 RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
-        INSERT INTO planet_osm_point
+        INSERT INTO planet_osm_point (osm_id, power, max_voltage, tags, way)
         SELECT -id, 'plant', NULL, tags::hstore, ST_Centroid(power_multi_geom('r'||id)) FROM planet_osm_rels WHERE tags::hstore->'type'='site' AND tags::hstore->'power'='plant' AND id = NEW.id;
     ELSE
         DELETE FROM planet_osm_point WHERE -osm_id = OLD.id;
