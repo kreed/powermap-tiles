@@ -28,6 +28,7 @@ sql = """
         way,
         power AS kind,
         tags->'name' AS name,
+        COALESCE(tags->'generator:output:electricity', tags->'plant:output:electricity') AS capacity,
         false AS label_placement
     FROM planet_osm_point
     WHERE way && !bbox!
@@ -38,6 +39,7 @@ UNION ALL
         label_placement AS way,
         power AS kind,
         tags->'name' AS name,
+        COALESCE(tags->'generator:output:electricity', tags->'plant:output:electricity') AS capacity,
         true AS label_placement
     FROM planet_osm_polygon
     WHERE label_placement && !bbox!
@@ -55,7 +57,7 @@ simplify = true
 
 [[tileset.layer.query]]
 minzoom = 0
-maxzoom = 9
+maxzoom = 11
 sql = """
     SELECT
         osm_id,
@@ -81,7 +83,7 @@ sql = """
 """
 
 [[tileset.layer.query]]
-minzoom = 10
+minzoom = 12
 maxzoom = 16
 sql = """
     SELECT
@@ -111,7 +113,7 @@ fid_field = "osm_id"
 simplify = true
 
 [[tileset.layer.query]]
-minzoom = 5
+minzoom = 11
 maxzoom = 16
 sql = """
     SELECT
