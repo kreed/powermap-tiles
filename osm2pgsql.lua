@@ -298,23 +298,22 @@ function power_tags(tags)
         if tags.power == 'line' and tags.max_voltage and tags.max_voltage < 33000 then
             tags.power = 'minor_line'
         end
-    else
-        tags.voltage_count = 0
     end
 
-    local capacity = tags["generator:output:electricity"] or tags["plant:output:electricity"]
-    if capacity then
-        mw = string.match(capacity, "^([0-9.]+) MW$")
+    local output = tags["generator:output:electricity"] or tags["plant:output:electricity"] or tags["capacity"]
+    tags.capacity = nil
+    if output then
+        local mw = string.match(output, "^([0-9.]+)%s*MW$")
         if mw then
-            tags.capacity = tonumber(mw) * 1000000
+            tags.capacity = math.floor(tonumber(mw) * 1000000)
         end
-        kw = string.match(capacity, "^([0-9.]+) kW$")
+        local kw = string.match(output, "^([0-9.]+)%s*kW$")
         if kw then
-            tags.capacity = tonumber(kw) * 1000
+            tags.capacity = math.floor(tonumber(kw) * 1000)
         end
-        w = string.match(capacity, "^([0-9.]+) W$")
+        local w = string.match(output, "^([0-9.]+)%s*W$")
         if w then
-            tags.capacity = tonumber(w)
+            tags.capacity = math.floor(tonumber(w))
         end
     end
 end
