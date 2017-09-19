@@ -2,7 +2,7 @@
 -- https://github.com/openstreetmap/osm2pgsql/blob/master/docs/lua.md
 
 -- Custom keys that are defined by this file
-custom_keys = {'max_voltage', 'voltage_count', 'voltage_normalized'}
+custom_keys = {'max_voltage', 'voltage_count', 'voltage_normalized', 'capacity'}
 
 -- Objects with any of the following keys will be treated as polygon
 local polygon_keys = {
@@ -297,6 +297,24 @@ function power_tags(tags)
         tags.max_voltage = normalized[1]
         if tags.power == 'line' and tags.max_voltage and tags.max_voltage < 33000 then
             tags.power = 'minor_line'
+        end
+    else
+        tags.voltage_count = 0
+    end
+
+    local capacity = tags["generator:output:electricity"] or tags["plant:output:electricity"]
+    if capacity then
+        mw = string.match(capacity, "^([0-9.]+) MW$")
+        if mw then
+            tags.capacity = tonumber(mw) * 1000000
+        end
+        kw = string.match(capacity, "^([0-9.]+) kW$")
+        if kw then
+            tags.capacity = tonumber(kw) * 1000
+        end
+        w = string.match(capacity, "^([0-9.]+) W$")
+        if w then
+            tags.capacity = tonumber(w)
         end
     end
 end

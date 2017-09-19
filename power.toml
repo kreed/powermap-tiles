@@ -28,7 +28,8 @@ sql = """
         way,
         power AS kind,
         tags->'name' AS name,
-        COALESCE(tags->'generator:output:electricity', tags->'plant:output:electricity') AS capacity,
+        tags->'voltage' AS voltage,
+        tags->'capacity' AS capacity,
         false AS label_placement
     FROM planet_osm_point
     WHERE way && !bbox!
@@ -39,7 +40,8 @@ UNION ALL
         label_placement AS way,
         power AS kind,
         tags->'name' AS name,
-        COALESCE(tags->'generator:output:electricity', tags->'plant:output:electricity') AS capacity,
+        tags->'voltage' AS voltage,
+        tags->'capacity' AS capacity,
         true AS label_placement
     FROM planet_osm_polygon
     WHERE label_placement && !bbox!
