@@ -1,6 +1,6 @@
 createdb:
-	createdb -E UTF-8 -T template0 trex
-	psql -d trex -c 'CREATE EXTENSION postgis; CREATE EXTENSION hstore;'
+	createdb -E UTF-8 -T template0 power
+	psql -d power -c 'CREATE EXTENSION postgis; CREATE EXTENSION hstore;'
 
 convertpbf:
 	rm planet.o5m
@@ -15,15 +15,15 @@ filtero5m:
 
 updatedb:
 	osmconvert planet-power-imported.o5m planet-power.o5m --diff -o=planet-power.osc
-	osm2pgsql -s -G -C 2048 -E 3857 -S osm2pgsql.style -j planet-power.osc -d trex -a --tag-transform-script osm2pgsql.lua
+	osm2pgsql -s -G -C 2048 -E 3857 -S osm2pgsql.style -j planet-power.osc -d power -a --tag-transform-script osm2pgsql.lua
 	mv planet-power.o5m planet-power-imported.o5m
-	./grid.py trex
+	./grid.py power
 	rm -r cache
 	./trex generate --config power.toml --minzoom 0 --maxzoom 6
 
 import:
-	osm2pgsql -s -G -C 2048 -E 3857 -S osm2pgsql.style -j planet-power-imported.o5m -d trex --tag-transform-script osm2pgsql.lua
-	psql -d trex -f indexes.sql
-	./grid.py trex
+	osm2pgsql -s -G -C 2048 -E 3857 -S osm2pgsql.style -j planet-power-imported.o5m -d power --tag-transform-script osm2pgsql.lua
+	psql -d power -f indexes.sql
+	./grid.py power
 	rm -r cache
 	./trex generate --config power.toml --minzoom 0 --maxzoom 6

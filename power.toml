@@ -4,7 +4,7 @@
 viewer = true
 
 [[datasource]]
-dbconn = "postgresql://chris@%2Fvar%2Frun%2Fpostgresql/trex"
+dbconn = "postgresql://chris@%2Fvar%2Frun%2Fpostgresql/power"
 
 [grid]
 predefined = "web_mercator"
