@@ -1,9 +1,6 @@
 -- For documentation of Lua tag transformations, see:
 -- https://github.com/openstreetmap/osm2pgsql/blob/master/docs/lua.md
 
--- Custom keys that are defined by this file
-custom_keys = {'max_voltage', 'voltage_count', 'voltage_normalized', 'capacity'}
-
 -- Objects with any of the following keys will be treated as polygon
 local polygon_keys = {
     'abandoned:aeroway',
@@ -121,65 +118,62 @@ local delete_tags = {
     -- MassGIS (Massachusetts, US)
     'massgis:way_id',
 
-    -- mvdgis (Montevideo, UY)
-    'mvdgis:.*',
-
     -- misc
     'import',
     'import_uuid',
     'OBJTYPE',
     'SK53_bulk:load'
 }
-delete_wildcards = {
-    'note:.*',
-    'source:.*',
+delete_prefixes = {
+    'note:',
+    'source:',
     -- Corine (CLC) (Europe)
-    'CLC:.*',
+    'CLC:',
 
     -- Geobase (CA)
-    'geobase:.*',
+    'geobase:',
     -- CanVec (CA)
-    'canvec:.*',
+    'canvec:',
     -- Geobase (CA)
-    'geobase:.*',
+    'geobase:',
 
     -- osak (DK)
-    'osak:.*',
+    'osak:',
     -- kms (DK)
-    'kms:.*',
+    'kms:',
 
     -- ngbe (ES)
     -- See also note:es and source:file above
-    'ngbe:.*',
+    'ngbe:',
 
     -- Friuli Venezia Giulia (IT)
-    'it:fvg:.*',
+    'it:fvg:',
 
     -- KSJ2 (JA)
     -- See also note:ja and source_ref above
-    'KSJ2:.*',
+    'KSJ2:',
     -- Yahoo/ALPS (JA)
-    'yh:.*',
+    'yh:',
 
     -- LINZ (NZ)
-    'LINZ2OSM:.*',
-    'linz2osm:.*',
-    'LINZ:.*',
+    'LINZ2OSM:',
+    'linz2osm:',
+    'LINZ:',
 
     -- WroclawGIS (PL)
-    'WroclawGIS:.*',
+    'WroclawGIS:',
     -- Naptan (UK)
-    'naptan:.*',
+    'naptan:',
 
     -- TIGER (US)
-    'tiger:.*',
+    'tiger:',
     -- GNIS (US)
-    'gnis:.*',
+    'gnis:',
     -- National Hydrography Dataset (US)
-    'NHD:.*',
-    'nhd:.*',
+    'NHD:',
+    'nhd:',
     -- mvdgis (Montevideo, UY)
-    'mvdgis:.*'
+    'mvdgis:'
 }
 
 -- Big table for z_order and roads status for certain tags. z=0 is turned into
@@ -289,7 +283,7 @@ function power_tags(tags)
         end
         table.sort(normalized, function(a,b) return a > b end)
         -- ignore HVDC electrode lines
-        if #normalized > 1 and normalized[#normalized] == 0 then
+        if normalized[#normalized] == 0 then
             table.remove(normalized)
         end
         tags.voltage_normalized = table.concat(normalized, ";")
@@ -334,21 +328,24 @@ function roads(tags)
     return 0
 end
 
--- Filtering on nodes, ways, and relations
-function filter_tags_generic(tags, n)
-    -- Delete tags listed in delete_tags
-    for tag, _ in pairs (tags) do
-        for _, d in ipairs(delete_tags) do
-            if tag == d then
-              tags[tag] = nil
-              break -- Skip this tag from further checks since it's deleted
-            end
-        end
+--- Generic filtering of OSM tags
+-- @param tags Raw OSM tags
+-- @return Filtered OSM tags
+function filter_tags_generic(tags)
+    -- Short-circuit for untagged objects
+    if next(tags) == nil then
+        return 1, {}
     end
+
+    -- Delete tags listed in delete_tags
+    for _, d in ipairs(delete_tags) do
+        tags[d] = nil
+    end
+
     -- By using a second loop for wildcards we avoid checking already deleted tags
     for tag, _ in pairs (tags) do
-        for _, d in ipairs(delete_wildcards) do
-            if string.find(tag, d) then
+        for _, d in ipairs(delete_prefixes) do
+            if string.sub(tag, 1, string.len(d)) == d then
                 tags[tag] = nil
                 break
             end
@@ -360,7 +357,7 @@ function filter_tags_generic(tags, n)
         return 1, {}
     end
 
--- Convert layer to an integer
+    -- Convert layer to an integer
     tags['layer'] = layer(tags['layer'])
     return 0, tags
 end
@@ -368,20 +365,19 @@ end
 -- Filtering on nodes
 function filter_tags_node (keyvalues, numberofkeys)
     power_tags(keyvalues)
-    return filter_tags_generic(keyvalues, numberofkeys)
+    return filter_tags_generic(keyvalues)
 end
 
 -- Filtering on relations
 function filter_basic_tags_rel (keyvalues, numberofkeys)
-    power_tags(keyvalues)
     -- Filter out objects that are filtered out by filter_tags_generic
-    local filter, keyvalues = filter_tags_generic(keyvalues, numberofkeys)
+    local filter, keyvalues = filter_tags_generic(keyvalues)
     if filter == 1 then
         return 1, keyvalues
     end
 
     -- Filter out all relations except route, multipolygon and boundary relations
-    if ((keyvalues["type"] ~= "route") and (keyvalues["type"] ~= "multipolygon") and (keyvalues["type"] ~= "boundary")) then
+    if ((keyvalues["type"] ~= "route") and (keyvalues["type"] ~= "multipolygon") and (keyvalues["type"] ~= "boundary") and (keyvalues["type"] ~= "site")) then
         return 1, keyvalues
     end
 
@@ -394,7 +390,7 @@ function filter_tags_way (keyvalues, numberofkeys)
     local polygon = 0 -- Will object be treated as polygon?
 
     -- Filter out objects that are filtered out by filter_tags_generic
-    filter, keyvalues = filter_tags_generic(keyvalues, numberofkeys)
+    filter, keyvalues = filter_tags_generic(keyvalues)
     if filter == 1 then
         return filter, keyvalues, polygon, roads
     end
@@ -402,52 +398,23 @@ function filter_tags_way (keyvalues, numberofkeys)
     polygon = isarea(keyvalues)
 
     -- Add z_order column
-    keyvalues.z_order = z_order(keyvalues)
     power_tags(keyvalues)
 
     return filter, keyvalues, polygon, roads(keyvalues)
 end
 
 --- Handling for relation members and multipolygon generation
--- Multipolygons are either old-style or new-style. As defined here,
--- a new-style MP is one with any tags other than type on the relation, and for
--- them the tags of the ways do not matter.
---
--- An old-style MP is one where the only tag on the relation is
--- type=multipolygon and the tags of all the members are either the same or
--- empty.
---
--- These are stricter definitions then have been used in the past by the C
--- transforms, but cut down on bugs where a new-style MP suddenly gets treated
--- as an old-style MP.
---
--- This has a few properties
---
--- - MP generation does not depend on polygon characteristics of tags on ways
---
--- - All tags are considered, except for deleted tags which are ignored for
---   technical reasons
---
--- - Any new-style MP will never change to an old-style MP by only changing
---   tags on its member ways, nor will it become invalid
---
--- - Any old-style MP will never change to an new-style MP by only changing
---   tags on its member ways, but may become invalid if the tags become
---   conflicting
---
--- - All multipolygons are polygons
---
 -- @param keyvalues OSM tags, after processing by relation transform
 -- @param keyvaluemembers OSM tags of relation members, after processing by way transform
 -- @param roles OSM roles of relation members
 -- @param membercount number of members
 -- @return filter, cols, member_superseded, boundary, polygon, roads
 function filter_tags_relation_member (keyvalues, keyvaluemembers, roles, membercount)
-    local members_superseeded = {}
+    local members_superseded = {}
 
     -- Start by assuming that this not an old-style MP
     for i = 1, membercount do
-        members_superseeded[i] = 0
+        members_superseded[i] = 0
     end
 
     local type = keyvalues["type"]
@@ -455,53 +422,29 @@ function filter_tags_relation_member (keyvalues, keyvaluemembers, roles, memberc
     -- Remove type key
     keyvalues["type"] = nil
 
-    -- Boundary relations are treated as linestring
+    -- Filter out relations with just a type tag or no tags
+    if next(keyvalues) == nil then
+        return 1, keyvalues, members_superseded, 0, 0, 0, 0
+    end
+
     if type == "boundary" or (type == "multipolygon" and keyvalues["boundary"]) then
-        -- Avoid generating objects for untagged boundary relations
-        if next(keyvalues) ~= nil then
-            keyvalues.z_order = z_order(keyvalues)
-            return 0, keyvalues, members_superseeded, 1, 0, roads(keyvalues)
-        end
+        power_tags(keyvalues)
+        return 0, keyvalues, members_superseded, 1, 0, 0, roads(keyvalues)
     -- For multipolygons...
     elseif (type == "multipolygon") then
         -- Multipolygons by definition are polygons, so we know roads = linestring = 0, polygon = 1
-        -- The type tag has been removed, so this checks for untagged MPs
-        if next(keyvalues) == nil then
-            -- This is an old-style MP
-            local combined_tags = combine_member_tags(keyvaluemembers)
-            if combined_tags == nil then
-                -- This is an invalid old-style MP with conflicting tags
-                return 1, {}, members_superseeded, 0, 1, 0
-            elseif next(combined_tags) == nil then
-                -- This is a valid old-style MP, but has no tags
-                return 1, {}, members_superseeded, 0, 1, 0
-            else
-                -- This is a valid old-style MP because a set of tags could be
-                -- made. For each member, the POLYGON its way tags generated is
-                -- superseded by the geometry from the MP, or the way was untagged.
-                -- Untagged ways generate no geom, so can be superseded too.
-                for i = 1, membercount do
-                    members_superseeded[i] = 1
-                end
-                combined_tags.z_order = z_order(keyvalues)
-                return 0, combined_tags, members_superseeded, 0, 1, 0
-            end
-        else
-            -- This is a new-style MP
-            power_tags(keyvalues)
-            keyvalues.z_order = z_order(keyvalues)
-            return 0, keyvalues, members_superseeded, 0, 1, 0
-        end
-        assert(false, "End of control reached prematurely for MP")
+        power_tags(keyvalues)
+        return 0, keyvalues, members_superseded, 0, 1, 0, 0
     elseif type == "route" then
-        if next(keyvalues) ~= nil then
-            keyvalues.z_order = z_order(keyvalues)
-            return 0, keyvalues, members_superseeded, 1, 0, roads(keyvalues)
-        end
+        power_tags(keyvalues)
+        return 0, keyvalues, members_superseded, 1, 0, 0, roads(keyvalues)
+    elseif type == "site" then
+        power_tags(keyvalues)
+        return 0, keyvalues, members_superseded, 0, 0, 1, 0
     end
 
-    -- Untagged or unknown type
-    return 1, keyvalues, members_superseeded, 0, 0, 0
+    -- Unknown type of relation or no type tag
+    return 1, keyvalues, members_superseded, 0, 0, 0, 0
 end
 
 --- Check if an object with given tags should be treated as polygon
@@ -536,45 +479,6 @@ function is_in (needle, haystack)
         end
     end
     return false
-end
-
---- compare two values.
--- if they are tables, then compare their keys and fields recursively.
--- @within Comparing
--- @param t1 A value
--- @param t2 A value
--- @return true or false
-function equaltables (t1,t2)
-    for k, v in pairs(t1) do
-        if t2[k] ~= v then return false end
-    end
-    for k, v in pairs(t2) do
-        if t1[k] ~= v then return false end
-    end
-    return true
-end
-
---- Combines the tags of relation members
--- If the tags are conflicting then nil is returned. Members with no tags are ignored
--- @param member_tags OSM tags of relation members
--- @return combined tags, or nil if cannot combine
-function combine_member_tags (member_tags)
-    local combined_tags = {}
-    for _, tags in ipairs(member_tags) do
-        -- Check if the member has tags
-        if next(tags) ~= nil then
-            if next(combined_tags) == nil then
-                -- This is the first tagged member
-                combined_tags = tags
-            else
-                -- A different tagged member
-                if not equaltables(tags, combined_tags) then
-                    return nil
-                end
-            end
-        end
-    end
-    return combined_tags
 end
 
 --- Normalizes layer tags
