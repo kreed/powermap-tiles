@@ -297,6 +297,10 @@ function power_tags(tags)
     local output = tags["generator:output:electricity"] or tags["plant:output:electricity"] or tags["capacity"]
     tags.capacity = nil
     if output then
+        local gw = string.match(output, "^([0-9.]+)%s*GW$")
+        if gw then
+            tags.capacity = math.floor(tonumber(gw) * 1000000000)
+        end
         local mw = string.match(output, "^([0-9.]+)%s*MW$")
         if mw then
             tags.capacity = math.floor(tonumber(mw) * 1000000)

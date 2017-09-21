@@ -29,7 +29,8 @@ sql = """
         power AS kind,
         tags->'name' AS name,
         tags->'voltage' AS voltage,
-        (tags->'capacity')::integer AS capacity,
+        COALESCE(tags->'plant:source', tags->'generator:source') AS fuel,
+        (tags->'capacity')::bigint AS capacity,
         false AS label_placement
     FROM planet_osm_point
     WHERE way && !bbox!
@@ -41,7 +42,8 @@ UNION ALL
         power AS kind,
         tags->'name' AS name,
         tags->'voltage' AS voltage,
-        (tags->'capacity')::integer AS capacity,
+        COALESCE(tags->'plant:source', tags->'generator:source') AS fuel,
+        (tags->'capacity')::bigint AS capacity,
         true AS label_placement
     FROM planet_osm_polygon
     WHERE label_placement && !bbox!
