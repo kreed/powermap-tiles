@@ -56,8 +56,8 @@ geometry_field = "way"
 geometry_type = "LINESTRING"
 srid = 3857
 fid_field = "osm_id"
-buffer_size = 10
 simplify = true
+buffer_size = 1
 
 [[tileset.layer.query]]
 minzoom = 0
