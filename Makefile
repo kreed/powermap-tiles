@@ -3,7 +3,7 @@ createdb:
 	psql -d power -c 'CREATE EXTENSION postgis; CREATE EXTENSION hstore;'
 
 convertpbf:
-	rm planet.o5m
+	rm -f planet.o5m
 	osmconvert planet-latest.osm.pbf --drop-author --out-o5m -o=planet.o5m
 
 updateo5m:

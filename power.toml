@@ -29,8 +29,10 @@ sql = """
         power AS kind,
         tags->'name' AS name,
         tags->'voltage' AS voltage,
+        format_voltage(tags->'voltage') AS voltage_pretty,
         COALESCE(tags->'plant:source', tags->'generator:source') AS fuel,
         (tags->'capacity')::bigint AS capacity,
+        format_capacity((tags->'capacity')::bigint) AS capacity_pretty,
         false AS label_placement
     FROM planet_osm_point
     WHERE way && !bbox!
@@ -42,8 +44,10 @@ UNION ALL
         power AS kind,
         tags->'name' AS name,
         tags->'voltage' AS voltage,
+        format_voltage(tags->'voltage') AS voltage_pretty,
         COALESCE(tags->'plant:source', tags->'generator:source') AS fuel,
         (tags->'capacity')::bigint AS capacity,
+        format_capacity((tags->'capacity')::bigint) AS capacity_pretty,
         true AS label_placement
     FROM planet_osm_polygon
     WHERE label_placement && !bbox!
@@ -70,9 +74,11 @@ sql = """
         max_voltage,
         tags->'voltage' AS voltage,
         tags->'voltage_normalized' AS voltage_normalized,
+        format_voltage(tags->'voltage') AS voltage_pretty,
         COALESCE((tags->'voltage_count')::integer, 0) AS voltage_count,
         tags->'name' AS name,
         tags->'cables' AS cables,
+        format_cables(tags->'cables') AS cables_pretty,
         tags->'frequency' AS frequency,
         grid
     FROM planet_osm_line
@@ -97,9 +103,11 @@ sql = """
         max_voltage,
         tags->'voltage' AS voltage,
         tags->'voltage_normalized' AS voltage_normalized,
+        format_voltage(tags->'voltage') AS voltage_pretty,
         COALESCE((tags->'voltage_count')::integer, 0) AS voltage_count,
         tags->'name' AS name,
         tags->'cables' AS cables,
+        format_cables(tags->'cables') AS cables_pretty,
         tags->'frequency' AS frequency,
         grid
     FROM planet_osm_line
@@ -127,6 +135,7 @@ sql = """
         power AS kind,
         tags->'voltage' AS voltage,
         tags->'voltage_normalized' AS voltage_normalized,
+        format_voltage(tags->'voltage') AS voltage_pretty,
         COALESCE((tags->'voltage_count')::integer, 0) AS voltage_count,
         tags->'name' AS name
     FROM planet_osm_polygon

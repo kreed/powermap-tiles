@@ -15,6 +15,41 @@ DROP TRIGGER IF EXISTS trigger_polygon ON planet_osm_polygon;
 CREATE TRIGGER trigger_polygon BEFORE INSERT OR UPDATE ON planet_osm_polygon FOR EACH ROW EXECUTE PROCEDURE trigger_function_polygon();
 COMMIT;
 
+/* pretty print functions */
+CREATE OR REPLACE FUNCTION volts_to_kv(volts text)
+  RETURNS text AS
+$$ BEGIN
+  BEGIN
+    RETURN format('%s kV', volts::integer/1000);
+  EXCEPTION WHEN OTHERS THEN
+    RETURN volts;
+  END;
+END; $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION format_capacity(watts bigint)
+  RETURNS text AS
+$$ BEGIN
+  IF watts IS NULL THEN
+    RETURN NULL;
+  END IF;
+  RETURN format('%s MW', trim(to_char(watts/1000000.0, 'FM999990.99'), '.'));
+END; $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION format_voltage(volts text)
+  RETURNS text AS
+$$ BEGIN
+  RETURN array_to_string((SELECT array_agg(volts_to_kv(e)) FROM unnest(string_to_array(volts, ';')) AS e), '; ');
+END; $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION format_cables(cables text)
+  RETURNS text AS
+$$ BEGIN
+  IF cables IS NULL THEN
+    RETURN NULL;
+  END IF;
+  RETURN format('(%s)', cables);
+END; $$ LANGUAGE plpgsql;
+
 /* indexes */
 CREATE INDEX planet_osm_point_power_index ON planet_osm_point USING gist(way) WHERE power IN ('substation', 'sub_station', 'station', 'plant', 'generator');
 CREATE INDEX planet_osm_polygon_power_index ON planet_osm_polygon USING gist(way) WHERE power IN ('substation', 'sub_station', 'station', 'plant', 'generator');
