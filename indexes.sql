@@ -20,7 +20,7 @@ CREATE OR REPLACE FUNCTION volts_to_kv(volts text)
   RETURNS text AS
 $$ BEGIN
   BEGIN
-    RETURN format('%s kV', volts::integer/1000);
+    RETURN format('%s kV', trim(to_char(volts::integer/1000.0, 'FM9990.9'), '.'));
   EXCEPTION WHEN OTHERS THEN
     RETURN volts;
   END;
