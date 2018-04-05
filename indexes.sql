@@ -41,15 +41,6 @@ $$ BEGIN
   RETURN array_to_string((SELECT array_agg(volts_to_kv(e)) FROM unnest(string_to_array(volts, ';')) AS e), '; ');
 END; $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION format_cables(cables text)
-  RETURNS text AS
-$$ BEGIN
-  IF cables IS NULL THEN
-    RETURN NULL;
-  END IF;
-  RETURN format('(%s)', cables);
-END; $$ LANGUAGE plpgsql;
-
 /* indexes */
 CREATE INDEX planet_osm_point_power_index ON planet_osm_point USING gist(way) WHERE power IN ('substation', 'sub_station', 'station', 'plant', 'generator');
 CREATE INDEX planet_osm_polygon_power_index ON planet_osm_polygon USING gist(way) WHERE power IN ('substation', 'sub_station', 'station', 'plant', 'generator');

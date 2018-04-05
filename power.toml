@@ -81,7 +81,6 @@ sql = """
         COALESCE((tags->'voltage_count')::integer, 0) AS voltage_count,
         tags->'name' AS name,
         tags->'cables' AS cables,
-        format_cables(tags->'cables') AS cables_pretty,
         tags->'frequency' AS frequency,
         grid
     FROM planet_osm_line
@@ -113,7 +112,6 @@ sql = """
         COALESCE((tags->'voltage_count')::integer, 0) AS voltage_count,
         tags->'name' AS name,
         tags->'cables' AS cables,
-        format_cables(tags->'cables') AS cables_pretty,
         tags->'frequency' AS frequency,
         grid
     FROM planet_osm_line
