@@ -289,7 +289,7 @@ function power_tags(tags)
         tags.voltage_normalized = table.concat(normalized, ";")
         tags.voltage_count = #normalized
         tags.max_voltage = normalized[1]
-        if tags.power == 'line' and tags.max_voltage and tags.max_voltage < 33000 then
+        if tags.power == 'line' and tags.max_voltage and tags.max_voltage < 40000 then
             tags.power = 'minor_line'
         end
     end

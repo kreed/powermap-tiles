@@ -89,7 +89,7 @@ sql = """
     AND max_voltage >= (CASE
         WHEN !zoom! < 3 THEN 300000
         WHEN !zoom! < 5 THEN 100000
-        ELSE 33000
+        ELSE 40000
     END)
     ORDER BY max_voltage
 """
@@ -101,7 +101,7 @@ sql = """
     SELECT
         osm_id,
         way,
-        power AS kind,
+        (CASE WHEN power='cable' AND max_voltage < 40000 THEN 'minor_cable' ELSE power END) AS kind,
         max_voltage,
         tags->'voltage' AS voltage,
         (string_to_array(tags->'voltage_normalized', ';'))[1]::integer AS voltage1,
