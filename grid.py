@@ -90,6 +90,13 @@ cur.execute("""UPDATE planet_osm_line
 	SET grid = (CASE WHEN EXISTS ( SELECT NULL FROM _tmp_grid_ways WHERE way_id = osm_id ) THEN 'ercot' ELSE NULL END)
 """)
 
+cur.execute("""UPDATE planet_osm_polygon
+SET grid = (CASE WHEN osm_id IN
+    ( SELECT a.osm_id FROM planet_osm_polygon a, planet_osm_line b WHERE ST_Crosses(a.way, b.way) AND b.grid='ercot' )
+    THEN 'ercot' ELSE NULL END)
+WHERE power='substation'
+""")
+
 cur.close()
 
 conn.commit()
