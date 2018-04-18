@@ -29,13 +29,13 @@ sql = """
         power AS kind,
         max_voltage,
         tags->'name' AS name,
-        tags->'voltage' AS voltage,
         format_voltage(tags->'voltage') AS voltage_pretty,
         COALESCE(tags->'plant:source', tags->'generator:source') AS fuel,
         (tags->'capacity')::bigint AS capacity,
         format_capacity((tags->'capacity')::bigint) AS capacity_pretty,
         tags->'frequency' AS frequency,
         NULL AS grid,
+        to_json(tags) AS tags,
         false AS label_placement
     FROM planet_osm_point
     WHERE way && !bbox!
@@ -55,13 +55,13 @@ UNION ALL
         power AS kind,
         max_voltage,
         tags->'name' AS name,
-        tags->'voltage' AS voltage,
         format_voltage(tags->'voltage') AS voltage_pretty,
         COALESCE(tags->'plant:source', tags->'generator:source') AS fuel,
         (tags->'capacity')::bigint AS capacity,
         format_capacity((tags->'capacity')::bigint) AS capacity_pretty,
         tags->'frequency' AS frequency,
         grid,
+        to_json(tags) AS tags,
         true AS label_placement
     FROM planet_osm_polygon
     WHERE label_placement && !bbox!
@@ -93,16 +93,15 @@ sql = """
         way,
         power AS kind,
         max_voltage,
-        tags->'voltage' AS voltage,
         (string_to_array(tags->'voltage_normalized', ';'))[1]::integer AS voltage1,
         (string_to_array(tags->'voltage_normalized', ';'))[2]::integer AS voltage2,
         (string_to_array(tags->'voltage_normalized', ';'))[3]::integer AS voltage3,
-        tags->'voltage_normalized' AS voltage_normalized,
         format_voltage(tags->'voltage') AS voltage_pretty,
         COALESCE((tags->'voltage_count')::integer, 0) AS voltage_count,
         tags->'name' AS name,
         tags->'cables' AS cables,
         tags->'frequency' AS frequency,
+        to_json(tags) AS tags,
         grid
     FROM planet_osm_line
     WHERE way && !bbox!
@@ -124,16 +123,15 @@ sql = """
         way,
         (CASE WHEN power='cable' AND max_voltage < 40000 THEN 'minor_cable' ELSE power END) AS kind,
         max_voltage,
-        tags->'voltage' AS voltage,
         (string_to_array(tags->'voltage_normalized', ';'))[1]::integer AS voltage1,
         (string_to_array(tags->'voltage_normalized', ';'))[2]::integer AS voltage2,
         (string_to_array(tags->'voltage_normalized', ';'))[3]::integer AS voltage3,
-        tags->'voltage_normalized' AS voltage_normalized,
         format_voltage(tags->'voltage') AS voltage_pretty,
         COALESCE((tags->'voltage_count')::integer, 0) AS voltage_count,
         tags->'name' AS name,
         tags->'cables' AS cables,
         tags->'frequency' AS frequency,
+        to_json(tags) AS tags,
         grid
     FROM planet_osm_line
     WHERE way && !bbox!
@@ -157,15 +155,7 @@ sql = """
     SELECT
         osm_id,
         way,
-        max_voltage,
-        power AS kind,
-        tags->'voltage' AS voltage,
-        tags->'voltage_normalized' AS voltage_normalized,
-        format_voltage(tags->'voltage') AS voltage_pretty,
-        COALESCE((tags->'voltage_count')::integer, 0) AS voltage_count,
-        tags->'frequency' AS frequency,
-        grid,
-        tags->'name' AS name
+        power AS kind
     FROM planet_osm_polygon
     WHERE way && !bbox!
     AND power IN ('substation', 'sub_station', 'station', 'plant', 'generator')
