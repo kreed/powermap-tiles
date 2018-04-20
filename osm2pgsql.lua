@@ -298,19 +298,19 @@ function power_tags(tags)
     tags.capacity = nil
     if output then
         local gw = string.match(output, "^([0-9.]+)%s*GW$")
-        if gw then
+        if gw and tonumber(gw) then
             tags.capacity = math.floor(tonumber(gw) * 1000000000)
         end
         local mw = string.match(output, "^([0-9.]+)%s*MW$")
-        if mw then
+        if mw and tonumber(mw) then
             tags.capacity = math.floor(tonumber(mw) * 1000000)
         end
         local kw = string.match(output, "^([0-9.]+)%s*kW$")
-        if kw then
+        if kw and tonumber(kw) then
             tags.capacity = math.floor(tonumber(kw) * 1000)
         end
         local w = string.match(output, "^([0-9.]+)%s*W$")
-        if w then
+        if w and tonumber(w) then
             tags.capacity = math.floor(tonumber(w))
         end
     end
