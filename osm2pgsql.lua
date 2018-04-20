@@ -275,7 +275,7 @@ function power_tags(tags)
         -- and sorting in descinding order
         for _,v in ipairs(explode(";", tags.voltage)) do
             v = tonumber(v)
-            if v and not hash[v] then
+            if v and v < 20000000 and not hash[v] then
                 normalized[#normalized+1] = v
                 hash[v] = true
             end
