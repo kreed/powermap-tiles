@@ -10,7 +10,7 @@ convertpbf:
 
 convertxml:
 	rm -f planet.o5m
-	bzcat planet-*.osm.bz2 | osmconvert - --drop-author --out-o5m -o=planet.o5m
+	lbzcat planet-*.osm.bz2 | osmconvert - --drop-author --out-o5m -o=planet.o5m
 
 updateo5m:
 	osmupdate planet.o5m planet-new.o5m --drop-author
