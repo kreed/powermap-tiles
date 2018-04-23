@@ -73,6 +73,7 @@ UNION ALL
         OR (power='generator' AND COALESCE(tags->'generator:output:electricity', 'yes') != 'no' AND !zoom! >= 8)
         OR (power='plant' AND COALESCE(tags->'plant:output:electricity', 'yes') != 'no')
     )
+ORDER BY max_voltage
 """
 
 [[tileset.layer]]
