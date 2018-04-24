@@ -41,12 +41,13 @@ sql = """
     WHERE way && !bbox!
     AND (
         (power IN ('substation', 'sub_station', 'station') AND (CASE
-            WHEN !zoom! < 13 THEN max_voltage >= 40000
+            WHEN !zoom! < 10 THEN max_voltage >= 40000
+            WHEN !zoom! < 12 THEN COALESCE(tags->'substation', '') != 'minor_distribution'
             ELSE TRUE
             END))
         OR (power='generator' AND COALESCE(tags->'generator:output:electricity', 'yes') != 'no' AND !zoom! >= 8)
         OR (power='plant' AND COALESCE(tags->'plant:output:electricity', 'yes') != 'no')
-        OR (!zoom! >= 15 AND power IN ('tower', 'pole', 'portal', 'switch', 'transformer', 'compensator'))
+        OR (!zoom! >= 15 AND power IN ('tower', 'pole', 'portal', 'switch', 'transformer', 'compensator', 'converter'))
     )
 UNION ALL
     SELECT
@@ -68,10 +69,12 @@ UNION ALL
     AND (
         (power IN ('substation', 'sub_station', 'station') AND (CASE
             WHEN !zoom! < 10 THEN max_voltage >= 40000
+            WHEN !zoom! < 12 THEN COALESCE(tags->'substation', '') != 'minor_distribution'
             ELSE TRUE
             END))
         OR (power='generator' AND COALESCE(tags->'generator:output:electricity', 'yes') != 'no' AND !zoom! >= 8)
         OR (power='plant' AND COALESCE(tags->'plant:output:electricity', 'yes') != 'no')
+        OR (!zoom! >= 15 AND power IN ('tower', 'pole', 'portal', 'switch', 'transformer', 'compensator', 'converter'))
     )
 ORDER BY max_voltage
 """
