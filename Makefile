@@ -24,12 +24,12 @@ updatedb:
 	osm2pgsql -s -G -C 2048 -E 3857 -S osm2pgsql.style -j planet-power.osc -d $(db) -a --tag-transform-script osm2pgsql.lua
 	mv planet-power.o5m planet-power-imported.o5m
 	./grid.py $(db)
-	rm -r cache
+	rm -rf cache
 	./trex generate --config power.toml --minzoom 0 --maxzoom 6
 
 import:
 	osm2pgsql -s -G -C 2048 -E 3857 -S osm2pgsql.style -j planet-power-imported.o5m -d $(db) --tag-transform-script osm2pgsql.lua
 	psql -d $(db) -f indexes.sql
 	./grid.py $(db)
-	rm -r cache
+	rm -rf cache
 	./trex generate --config power.toml --minzoom 0 --maxzoom 6
