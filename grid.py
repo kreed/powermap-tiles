@@ -92,7 +92,7 @@ cur.execute("""UPDATE planet_osm_line
 
 cur.execute("""UPDATE planet_osm_polygon
 SET grid = (CASE WHEN osm_id IN
-    ( SELECT a.osm_id FROM planet_osm_polygon a, planet_osm_line b WHERE ST_Crosses(a.way, b.way) AND b.grid='ercot' )
+    ( SELECT a.osm_id FROM planet_osm_polygon a, planet_osm_line b WHERE ST_Intersects(a.way, b.way) AND b.grid='ercot' )
     THEN 'ercot' ELSE NULL END)
 WHERE power='substation'
 """)
